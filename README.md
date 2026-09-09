@@ -1,74 +1,73 @@
 Product Sales Report Generator
-Course: SENG 21222 – Software Construction (Assignment 1 – 2026)
-Institution: University of Kelaniya – Sri Lanka (Faculty of Science)
+Course: SENG 21222 – Software Construction (Assignment 1 – 2026)  
+Institution: University of Kelaniya – Sri Lanka (Faculty of Science)  
 Instructor: Eng. Sudam Kalpage
 ---
 Project Overview
-A modular, command-line Java application that reads daily product sales data from a CSV
-file, computes summary analytics (per-product and per-category revenue, best-seller
-detection, highest-revenue product, and grand total revenue), and dispatches the
-formatted report to either the console or a file.
+A modular, high-performance command-line application built in Java that reads daily product sales data from a CSV file, computes summary analytics (individual product revenues, category revenues, best-seller detection, highest revenue earner, and grand total revenue), and dispatches the formatted report either to the console or directly to a file.
 ---
-Architecture
+Architecture & SOLID Principles
+The system is designed in accordance with clean code practices and SOLID design principles:
 ```
 src/
 ├── main/java/com/kelaniya/sales/
-│   ├── SalesReporter.java                        # CLI entry point & orchestrator      [Member 3]
 │   ├── model/
-│   │   └── Product.java                          # Product entity + line revenue       [Member 1]
-│   ├── report/
-│   │   ├── SalesSummary.java                     # Immutable summary DTO               [Member 1]
-│   │   ├── SalesSummaryCalculator.java            # Analytics engine                    [Member 1]
-│   │   └── ReportFormatter.java                  # Plain-text report layout            [Member 1]
-│   ├── io/
-│   │   ├── ProductReader.java                    # Reading abstraction (DIP)           [Member 2]
-│   │   └── CsvProductReader.java                 # CSV parsing & validation            [Member 2]
+│   │   ├── Product.java                  # Product entity & line revenue calculation
+│   │   └── SalesSummary.java             # Immutable DTO holding computed summary statistics
+│   ├── reader/
+│   │   ├── ProductReader.java            # Product reading abstraction
+│   │   └── CsvProductReader.java         # CSV parsing, header skipping & validation
+│   ├── service/
+│   │   ├── SalesAnalysisService.java     # Analytics computation interface
+│   │   └── SalesAnalysisServiceImpl.java # Analytics engine (totals, categories, highlights)
+│   ├── formatter/
+│   │   ├── ReportFormatter.java          # Presentation layer interface
+│   │   └── PlainTextReportFormatter.java # ASCII table layout & currency formatting
 │   ├── output/
-│   │   ├── OutputStrategy.java                   # Strategy interface (OCP)            [Member 2]
-│   │   ├── ConsoleOutputStrategy.java             # Console output                      [Member 2]
-│   │   ├── FileOutputStrategy.java               # File output                          [Member 2]
-│   │   └── OutputStrategyFactory.java             # Resolves strategy from CLI args     [Member 2]
-│   └── exception/
-│       ├── ProductFileNotFoundException.java     # Input file missing/unreadable       [Member 3]
-│       ├── CsvFormatException.java               # Malformed CSV content                [Member 3]
-│       └── InvalidOutputMethodException.java     # Bad output method/args               [Member 3]
+│   │   ├── OutputStrategy.java           # Strategy interface for report export
+│   │   ├── ConsoleOutputStrategy.java    # Terminal output implementation
+│   │   ├── FileOutputStrategy.java       # File output implementation
+│   │   └── OutputStrategyFactory.java    # Factory for resolving output destination
+│   ├── exception/
+│   │   ├── SalesReportException.java     # Base checked domain exception
+│   │   ├── DataFormatException.java      # CSV structural/type validation errors
+│   │   ├── FileProcessingException.java  # File not found / I/O errors
+│   │   └── InvalidInputException.java    # CLI arguments validation errors
+│   └── SalesReporter.java                # Orchestrator & CLI main entry point
 └── test/java/com/kelaniya/sales/
-    ├── report/SalesSummaryCalculatorTest.java     # Core logic tests                     [Member 1]
-    └── io/CsvProductReaderTest.java               # File I/O & output tests              [Member 2]
+    ├── SalesReporterTests.java           # Comprehensive unit & integration tests
+    └── TestRunner.java                   # Zero-dependency test execution engine
 ```
+SOLID Principles Breakdown
+Principle	Implementation in Codebase
+S - Single Responsibility Principle (SRP)	Each class has one distinct responsibility. `Product` models item data; `CsvProductReader` strictly parses CSV; `SalesAnalysisServiceImpl` strictly performs mathematical aggregations; `PlainTextReportFormatter` strictly handles text formatting; `ConsoleOutputStrategy`/`FileOutputStrategy` handle dispatching.
+O - Open/Closed Principle (OCP)	The output system uses the Strategy Pattern (`OutputStrategy`). New output channels (e.g., `EmailOutputStrategy`, `JsonOutputStrategy`, `DatabaseOutputStrategy`) can be added without modifying existing report logic or core classes.
+L - Liskov Substitution Principle (LSP)	All implementations of `OutputStrategy` (`ConsoleOutputStrategy`, `FileOutputStrategy`) can be substituted interchangeably by `SalesReporter` without altering the correctness of the program.
+I - Interface Segregation Principle (ISP)	Interfaces are lean and specialized (`ProductReader`, `SalesAnalysisService`, `ReportFormatter`, `OutputStrategy`) instead of one monolithic interface.
+D - Dependency Inversion Principle (DIP)	High-level orchestrator (`SalesReporter`) depends on abstractions (`ProductReader`, `SalesAnalysisService`, `ReportFormatter`, `OutputStrategy`) rather than hardcoded concrete implementations.
 ---
 Group Member Task Division
-Member	Focus Area	Files
-Member 1	Core logic: reading the product file, computing the summary, writing the report	`model/Product.java`, `report/SalesSummary.java`, `report/SalesSummaryCalculator.java`, `report/ReportFormatter.java`, `test/report/SalesSummaryCalculatorTest.java`
-Member 2	File I/O, unit testing, and applying SOLID principles	`io/ProductReader.java`, `io/CsvProductReader.java`, `output/OutputStrategy.java`, `output/ConsoleOutputStrategy.java`, `output/FileOutputStrategy.java`, `output/OutputStrategyFactory.java`, `test/io/CsvProductReaderTest.java`
-Member 3	Console interface, exception handling, and documentation	`SalesReporter.java`, `exception/ProductFileNotFoundException.java`, `exception/CsvFormatException.java`, `exception/InvalidOutputMethodException.java`, `README.md`
-> All paths above are relative to `src/main/java/com/kelaniya/sales/` (and `src/test/java/com/kelaniya/sales/` for test files).
-SOLID Principles Applied
-Principle	Where
-SRP	Each class has one reason to change — `Product` models data, `CsvProductReader` only parses, `SalesSummaryCalculator` only computes, `ReportFormatter` only formats, each `OutputStrategy` only dispatches.
-OCP	New output channels (Email, JSON, DB) can be added by implementing `OutputStrategy` without touching `SalesReporter`.
-LSP	Any `OutputStrategy` implementation is interchangeable wherever the interface is used.
-ISP	`ProductReader` and `OutputStrategy` are small, focused interfaces.
-DIP	`SalesReporter` depends on the `ProductReader` and `OutputStrategy` abstractions, not concrete classes.
+Member	Focus Area	Implemented Components
+Member 1	Core Logic & Business Analytics	`Product.java`, `SalesSummary.java`, `SalesAnalysisService.java`, `SalesAnalysisServiceImpl.java` (Revenue per product, category sums, best seller, highest revenue, grand total).
+Member 2	File I/O, Strategy Pattern & Unit Testing	`ProductReader.java`, `CsvProductReader.java`, `OutputStrategy.java`, `ConsoleOutputStrategy.java`, `FileOutputStrategy.java`, `OutputStrategyFactory.java`, `SalesReporterTests.java`.
+Member 3	Console Interface, Error Handling & Formatting	`SalesReporter.java`, `PlainTextReportFormatter.java`, Exception Hierarchy (`SalesReportException`, `DataFormatException`, `FileProcessingException`, `InvalidInputException`), `TestRunner.java`, `README.md`.
 ---
 How to Build & Run
+1. Compile the Project
 ```bash
-# Compile
-javac -d bin $(find src -name "*.java")
-
-# Run Member 1's tests
-java -cp bin com.kelaniya.sales.report.SalesSummaryCalculatorTest
-
-# Run Member 2's tests
-java -cp bin com.kelaniya.sales.io.CsvProductReaderTest
-
-# Generate a report to the console
-java -cp bin com.kelaniya.sales.SalesReporter data/sample_sales.csv console
-
-# Generate a report to a file
-java -cp bin com.kelaniya.sales.SalesReporter data/sample_sales.csv file output/report.txt
+# Compile all source and test files to bin/ directory
+javac -d bin src/main/java/com/kelaniya/sales/**/*.java src/test/java/com/kelaniya/sales/*.java SalesReporter.java
 ```
-Sample Output
+2. Run the Unit Test Suite
+```bash
+java -cp bin com.kelaniya.sales.TestRunner
+```
+Outputs green `[PASS]` status for all 20 test cases covering revenue math, best seller detection, category grouping, CSV parsing, header skipping, error handling, and file writing.
+3. Generate Sales Report to Console
+```bash
+java -cp bin SalesReporter data/sample_sales.csv console
+```
+Expected Output:
 ```
 ============================================
         PRODUCT SALES SUMMARY REPORT
@@ -90,25 +89,31 @@ Highest Revenue      : Wireless Mouse ($306.00)
 Grand Total Revenue  : $871.25
 ============================================
 ```
+4. Generate Sales Report to a File
+```bash
+java -cp bin SalesReporter data/sample_sales.csv file output/report.txt
+```
 ---
-Error Handling
-Scenario	Exception thrown	Example
-CSV file missing/unreadable	`ProductFileNotFoundException`	`[ERROR] CSV file not found at path: data/missing.csv`
-Malformed CSV row/data	`CsvFormatException`	`[ERROR] Invalid CSV format at line 3: Expected 5 columns...`
-Invalid or missing output method/path	`InvalidOutputMethodException`	`[ERROR] Invalid output method 'cloud'. Supported methods are 'console' or 'file'.`
-`SalesReporter.main()` catches each of these along with a general `IOException` (for write
-failures) and prints a clean, user-friendly message with exit code `1` — no raw stack
-traces reach the user for expected error conditions.
+Error Handling Scenarios
+The tool handles errors gracefully and exits with code 1 and user-friendly error messages:
+Non-existent CSV File:
+```bash
+   java -cp bin SalesReporter data/missing.csv console
+   # Output: [ERROR] CSV file not found at path: data/missing.csv
+   ```
+Missing Output File Path for File Mode:
+```bash
+   java -cp bin SalesReporter data/sample_sales.csv file
+   # Output: [ERROR] Output file path is required when output-method is 'file'.
+   ```
+Invalid Output Method:
+```bash
+   java -cp bin SalesReporter data/sample_sales.csv cloud
+   # Output: [ERROR] Invalid output method 'cloud'. Supported methods are 'console' or 'file'.
+   ```
+Malformed CSV Row:
+```bash
+   java -cp bin SalesReporter data/invalid_row.csv console
+   # Output: [ERROR] Invalid CSV format at line 3: Expected 5 columns...
+   ```
 ---
-Recommended Git Workflow
-Since this is a genuine 3-way file split, each member can work in their own branch and open
-a pull request into `main`, or push directly to their assigned files if branch protection
-isn't set up:
-`git checkout -b member1-core-logic` (etc. per member)
-Add only your assigned files under the paths listed above
-Commit with a clear message, e.g. `feat: implement Product, SalesSummary, and SalesSummaryCalculator`
-Open a PR into `main` — the project only fully compiles once all three branches are merged, since `SalesReporter.java` depends on all three members' classes
-Shared Resources
-`data/*.csv` (sample, invalid-row, and empty test fixtures) and the `output/` directory are
-shared resources needed for running the app and both test suites — not owned by a single
-member, and should be added to `main` first (or by whoever creates the initial repo scaffold).
